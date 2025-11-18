@@ -4,7 +4,7 @@ Config { font = "xft:Iosevka Nerd Font Mono:style=Regular 8"
        , border = TopB
        , bgColor = "black"
        , fgColor = "#3c8dff"
-       , alpha = 255
+       , alpha = 230
        , position = TopH 10
        , textOffset = -1
        , iconOffset = -1
@@ -15,40 +15,48 @@ Config { font = "xft:Iosevka Nerd Font Mono:style=Regular 8"
        , iconRoot = "."
        , allDesktops = True
        , overrideRedirect = True
-       , commands = [ Run Weather "RJEC" ["-t","<station>: <tempC>C",
-                                          "-L","18","-H","25",
-                                          "--normal","green",
-                                          "--high","red",
-                                          "--low","lightblue"] 36000
-                     , Run Network "enx4a2c3ffc7603" ["-L","0","-H","32",
-                                          "--normal","green","--high","#fff"] 10
-		       , Run Network "wlxd03745c28e58" ["-L","0","-H","32",
-                                          "--normal","green","--high","#fff"] 10
-                     , Run Network "wlp1s0" ["-L","0","-H","32",
-                                          "--normal","green","--high","#fff"] 10
-                     , Run Cpu ["-L","3","-H","50",
-                               "--normal","green","--high","#fff"] 10
-                     , Run Memory ["-t","Mem: <usedratio>%"] 10
-                     , Run Swap [] 10
-		       , Run Battery [
-					  "-t", "<acstatus>: <left>%",
-					  "--",
-					  --"-c", "charge_full",
-					  "-O", "AC",
-					  "-o", "Bat",
-					  "-h", "green",
-					  "-l", "red"
-					  ] 10
-		       , Run DiskU [
-					  ("/", "Free: <free> of <size>"), ("sdb1", "<usedbar>")]
-					  ["-L", "20", "-H", "50", "-m", "1", "-p", "3"] 20
-                     , Run Com "uname" ["-n","-o"] "" 36000
-                     , Run Date "%a %b %_d %Y %H:%M:%S" "date" 10
-                     , Run Com "sh" ["-c","pulsemixer --get-volume | awk '{print $1\"%\"}'"] "volume" 10
-		    ]
+       , commands =
+           [ Run Com "bash" ["/home/fank/.config/weather.sh","WADS"] "weather" 10
+
+           , Run Network "enx4a2c3ffc7603" ["-t","TET <rx>kB|<tx>kB","-L","0","-H","32",
+                                 "--normal","green","--high","cyan"] 10
+                                 
+           , Run Network "wlxd03745c28e58" ["-t","USB <rx>kB|<tx>kB","-L","0","-H","32",
+                                 "--normal","green","--high","cyan"] 10 
+
+           , Run Network "wlp1s0" ["-t","SYS <rx>kB|<tx>kB","-L","0","-H","32",
+                                 "--normal","green","--high","cyan"] 10
+
+           , Run Cpu ["-t","<total>%",
+                      "-L","3","-H","50",
+                      "--normal","green","--high","cyan"] 10
+
+           , Run Memory ["-t","<usedratio>%"] 10
+
+           , Run Swap ["-t","<usedratio>%"] 10
+
+           , Run Battery ["-t","<acstatus> <left>%"
+                        , "--"
+                        , "-O", "⚡︎"
+                        , "-o", ""
+                        , "-i", "ϟ"
+                        ] 50
+
+           , Run DiskU [ ("/", "SDA <free>/<size>")
+                       , ("sdb1", " | SDB <free>/<size>")
+                       , ("sdc1", " | SDC <free>/<size>")
+                       ]
+                       ["-L","20","-H","50","-m","1","-p","3"] 20
+
+           , Run Com "whoami" [] "user" 36000
+           , Run Date "%a %b %_d %Y %H:%M:%S" "date" 10
+           , Run Com "sh" ["-c","pulsemixer --get-volume | awk '{print $1\"%\"}'"] "volume" 1
+           ]
+
        , sepChar = "%"
        , alignSep = "}{"
-       , template = "     %cpu%      %memory%      %swap%      %battery%      %disku%   \
-           \    %enx4a2c3ffc7603% %wlxd03745c28e58% %wlp1s0% } \
-           \ {   <fc=#3c8dffff>%date%</fc>      %RJEC%      %volume%      %uname%  "
+       , template =
+           "  <action=`nemo`>   %disku%</action>      %swap%      %memory%     %cpu%   \
+           \ <action=`urxvt -e nmtui`>   %wlxd03745c28e58% • %enx4a2c3ffc7603% • %wlp1s0%</action> } \
+           \ {    %weather%      %volume%   %battery%     %date%    %user%   " 
        }
