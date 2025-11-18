@@ -36,6 +36,7 @@ myKeys conf@(XConfig {modMask = modm}) = M.fromList $
 
     -- app launchers
     , ((modm,               xK_p     ), spawn "rofi -show run")
+    , ((modm .|. shiftMask, xK_p     ), spawn "rofi -show drun")
     , ((modm,               xK_f     ), spawn "firefox")
     , ((0, xK_Print), spawn "scrot '%Y-%m-%d-%H-%M-%S_$wx$h_scrot.png' -e 'mv $f ~/Pictures/Screenshots/'")
 

@@ -35,21 +35,32 @@ fi
 # =================
 echo "Configuring APT Repositories..."
 
-sudo tee /etc/apt/sources.list << 'EOF'
-deb http://deb.debian.org/debian bookworm contrib main non-free non-free-firmware
-deb http://deb.debian.org/debian bookworm-updates contrib main non-free non-free-firmware
-deb http://deb.debian.org/debian bookworm-proposed-updates contrib main non-free non-free-firmware
-deb http://deb.debian.org/debian bookworm-backports contrib main non-free non-free-firmware
-deb http://deb.debian.org/debian-security bookworm-security contrib main non-free non-free-firmware
+# Get The Codename Of The Current Debian Release
+CODENAME=$(lsb_release -c | awk '{print $2}')
 
-deb-src http://deb.debian.org/debian bookworm contrib main non-free non-free-firmware
-deb-src http://deb.debian.org/debian bookworm-updates contrib main non-free non-free-firmware
-deb-src http://deb.debian.org/debian bookworm-proposed-updates contrib main non-free non-free-firmware
-deb-src http://deb.debian.org/debian bookworm-backports contrib main non-free non-free-firmware
-deb-src http://deb.debian.org/debian-security bookworm-security contrib main non-free non-free-firmware
+# Check if We're Running Debian Bookworm Or Trixie
+if [[ "$CODENAME" == "bookworm" || "$CODENAME" == "trixie" ]]; then
+    echo "Configuring APT repositories for $CODENAME..."
+
+    # Write The Appropriate Sources To The sources.list File
+    sudo tee /etc/apt/sources.list << EOF
+deb http://deb.debian.org/debian $CODENAME contrib main non-free non-free-firmware
+deb http://deb.debian.org/debian $CODENAME-updates contrib main non-free non-free-firmware
+deb http://deb.debian.org/debian $CODENAME-proposed-updates contrib main non-free non-free-firmware
+deb http://deb.debian.org/debian $CODENAME-backports contrib main non-free non-free-firmware
+deb http://deb.debian.org/debian-security $CODENAME-security contrib main non-free non-free-firmware
+
+deb-src http://deb.debian.org/debian $CODENAME contrib main non-free non-free-firmware
+deb-src http://deb.debian.org/debian $CODENAME-updates contrib main non-free non-free-firmware
+deb-src http://deb.debian.org/debian $CODENAME-proposed-updates contrib main non-free non-free-firmware
+deb-src http://deb.debian.org/debian $CODENAME-backports contrib main non-free non-free-firmware
+deb-src http://deb.debian.org/debian-security $CODENAME-security contrib main non-free non-free-firmware
 EOF
 
-sudo apt update
+    sudo apt update
+else
+    echo "This Script Only Supports Debian Bookworm Or Trixie. Your System Is Running $CODENAME, Which Is Might Unsupported By This Script."
+fi
 
 # =====================
 #  PACKAGE INSTALLATION
@@ -68,6 +79,12 @@ tar p7zip zip unzip rar unrar gnupg2 linux-headers-$(uname -r) firefox-esr \
 vlc xdg-utils ntfs-3g nfs-common pmount cifs-utils lxpolkit pmount \
 udisks2 gvfs gvfs-backends
 
+# =====================
+#  REMOVE FILE-ROLLER
+# =====================
+sudo apt remove -y file-roller
+sudo apt autoremove -y
+
 # =================
 #  USER PERMISSIONS
 # =================
@@ -77,10 +94,10 @@ sudo usermod -aG plugdev,disk "$USER"
 # =====================
 #  POWER MANAGEMENT OFF
 # =====================
-echo "Disabling Sleep & Display Power Saving..."
-xset -dpms
-xset -s off
-xset -s noblank
+#echo "Disabling Sleep & Display Power Saving..."
+#xset -dpms
+#xset -s off
+#xset -s noblank
 
 # Disable Systemd Suspend
 sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
