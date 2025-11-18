@@ -146,6 +146,8 @@ myManageHook = composeAll
     , className =? "Mousepad" --> doCenterFloat
     , className =? "Nemo"  --> doCenterFloat
     , className =? "Lxapearance"  --> doCenterFloat
+    , className =? "Yad"  --> doCenterFloat
+    , className =? "Xdg-desktop-portal-gtk"  --> doCenterFloat
     , className =? "SimpleScreenRecorder"  --> doCenterFloat
     , className =? "Xarchiver"  --> doCenterFloat
     , resource  =? "desktop_window" --> doIgnore
@@ -189,4 +191,3 @@ main = do
         , logHook            = return ()
         , startupHook        = myStartupHook
         }
-
