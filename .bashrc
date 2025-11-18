@@ -1,1 +1,0 @@
-export PATH="$PATH:/home/fank/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin/:/sbin"
