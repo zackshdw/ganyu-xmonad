@@ -7,7 +7,7 @@ RESET="\033[0m"
 
 REQUIREMENTS_FILE="requirements.txt"
 CONFIG_DIR="$(pwd)/config"
-CONFIG_DEST_DIR="$(pwd)/.config"
+CONFIG_DEST_DIR="$HOME/.config"
 HOME_DIR="$HOME"
 
 LOADING=("/" "|" "\\" "-")
@@ -62,42 +62,51 @@ while IFS= read -r package || [[ -n "$package" ]]; do
 
 done < "$REQUIREMENTS_FILE"
 
-# Move files based on the package name
-echo -e "${BLUE}Moving files from $CONFIG_DIR to appropriate locations...${RESET}"
-
 if [ ! -d "$CONFIG_DEST_DIR" ]; then
     mkdir -p "$CONFIG_DEST_DIR"
 fi
 
-create_dir() {
-    dir="$1"
-    if [ ! -d "$dir" ]; then
-        mkdir -p "$dir"
+process() {
+    target_dir="$1"
+    package="$2" 
+    
+    if [ ! -d "$target_dir" ]; then
+        mkdir -p "$target_dir"
     fi
+    
+    for file in "$package"/*; do
+        if [ -f "$file" ]; then
+            mv -f "$file" "$target_dir"
+        fi
+    done
+}
+
+cleanup() {
+    for dir in "$CONFIG_DIR"/*; do
+        if [[ -d "$dir" && ! "$dir" =~ /.git/ ]]; then
+            rm -rf "$dir"
+        fi
+    done
 }
 
 for package in "$CONFIG_DIR"/*; do
     package_name=$(basename "$package")
     
     if [[ "$package_name" == "fonts" ]]; then
-        create_dir "$HOME_DIR/.fonts"
-        mv -f "$package"/* "$HOME_DIR/.fonts"
+        process "$HOME_DIR/.fonts" "$package"
     
     elif [[ "$package_name" == "Pictures" ]]; then
-        create_dir "$HOME_DIR/Pictures"
-        mv -f "$package"/* "$HOME_DIR/Pictures"
+        process "$HOME_DIR/Pictures" "$package"
     
-    elif [[ "$package_name" == "zsh-theme" ]]; then
-        create_dir "$HOME_DIR/.oh-my-zsh/themes"
-        mv -f "$package"/* "$HOME_DIR/.oh-my-zsh/themes"
+    elif [[ "$package_name" == "zsh-themes" ]]; then
+        process "$HOME_DIR/.oh-my-zsh/themes" "$package"
     
     else
-        create_dir "$CONFIG_DEST_DIR"
-        mv -f "$package" "$CONFIG_DEST_DIR"
+        process "$CONFIG_DEST_DIR/$package_name" "$package"
     fi
 done
 
-rm -r "$CONFIG_DIR"
+cleanup
 
 echo -e "${BLUE}=============================================="
 echo -e "${BLUE}Installation Complete!${RESET}"
