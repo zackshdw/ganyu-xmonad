@@ -16,4 +16,4 @@ rofi
 sh_icao_weather_code
 xmobar
 xmonad
-zsh-theme
+zsh-themes
