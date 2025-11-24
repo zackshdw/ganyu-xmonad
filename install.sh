@@ -6,7 +6,9 @@ RED="\033[0;31m"
 RESET="\033[0m"
 
 REQUIREMENTS_FILE="requirements.txt"
-CONFIG_DIR="$(pwd)/config"
+GTK_THEMES="$(pwd)/themes/gtk"
+GTK_THEMES_DEST="$HOME/.themes"
+CONFIG_DIR="$(pwd)/temp"
 CONFIG_DEST_DIR="$HOME/.config"
 HOME_DIR="$HOME"
 
@@ -106,8 +108,43 @@ for package in "$CONFIG_DIR"/*; do
     fi
 done
 
-cleanup
+if [ -d "$GTK_THEMES" ]; then
+    echo -e "${BLUE}=============================================="
+    echo -e "${BLUE}           Installing GTK Themes${RESET}"
+    echo -e "${BLUE}=============================================="
+
+    mkdir -p "$GTK_THEMES_DEST"
+
+    for theme in "$GTK_THEMES"/*; do
+        if [ -d "$theme" ]; then
+            theme_name=$(basename "$theme")
+            echo -e "${BLUE}→ Installing $theme_name${RESET}"
+
+            rm -rf "$GTK_THEMES_DEST/$theme_name" 2>/dev/null
+
+            cp -r "$theme" "$GTK_THEMES_DEST"
+        fi
+    done
+
+    echo -e "${BLUE}✔ GTK Themes Installed${RESET}"
+fi
+
+echo -ne "${YELLOW}Clean Up Downloaded Files? (Y/n): ${RESET}"
+read -r answer
+
+answer=${answer:-y}
+
+case "$answer" in
+    y|Y|yes|YES)
+        cleanup
+        echo -e "${BLUE}✔ Cleanup Complete.${RESET}"
+    ;;
+    *)
+        echo -e "${YELLOW}Skipping Cleanup. Temporary Files Kept.${RESET}"
+    ;;
+esac
+
 
 echo -e "${BLUE}=============================================="
-echo -e "${BLUE}Installation Complete!${RESET}"
+echo -e "${BLUE}            Installation Complete!${RESET}"
 echo -e "${BLUE}==============================================${RESET}"
