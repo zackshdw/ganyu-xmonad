@@ -29,13 +29,27 @@ loading() {
 
 install_package() {
     local package=$1
-    echo -ne "${BLUE}${LOADING[0]}  Installing $package...\r"
+    local temp_log=$(mktemp)
     
-    if sudo apt install -y "$package" > /dev/null 2>&1; then
+    sudo apt install -y "$package" > "$temp_log" 2>&1 &
+    local pid=$!
+    
+    while kill -0 $pid 2>/dev/null; do
+        loading "Installing $package"
+    done
+    
+    wait $pid
+    local exit_code=$?
+    
+    echo -ne "\r\033[K"
+    
+    if [ $exit_code -eq 0 ]; then
         echo -e "${BLUE}✔ $package Installed${RESET}"
+        rm -f "$temp_log"
         return 0
     else
         echo -e "${RED}✘ $package Failed To Install${RESET}"
+        rm -f "$temp_log"
         return 1
     fi
 }
@@ -48,21 +62,36 @@ install_packages() {
 
 remove_package() {
     local package=$1
-    echo -ne "${BLUE}${LOADING[0]}  Removing $package...\r"
+    local temp_log=$(mktemp)
     
-    if sudo apt remove -y "$package" > /dev/null 2>&1; then
+    sudo apt remove -y "$package" > "$temp_log" 2>&1 &
+    local pid=$!
+    
+    # Show animated loading while process runs
+    while kill -0 $pid 2>/dev/null; do
+        loading "Removing $package"
+    done
+    
+    wait $pid
+    local exit_code=$?
+    
+    echo -ne "\r\033[K"
+    
+    if [ $exit_code -eq 0 ]; then
         echo -e "${BLUE}✔ $package Removed${RESET}"
+        rm -f "$temp_log"
         return 0
     else
         echo -e "${RED}✘ $package Failed To Remove${RESET}"
+        rm -f "$temp_log"
         return 1
     fi
 }
 
+
 echo -e "${BLUE}=============================================="
 echo -e "${BLUE}         Ganyu Xmonad  Debian Installer"
 echo -e "${BLUE}==============================================${RESET}"
-
 
 # ============================================================
 #                     PATH CONFIGURATION
@@ -100,6 +129,7 @@ echo -e "${BLUE}✔ QT Environment Variables In ~/.profile Is Added${RESET}"
 # ============================================================
 #                     APT REPOSITORIES
 # ============================================================
+
 echo -e "${BLUE}→ Configuring APT Repositories...${RESET}"
 
 CODENAME=$(lsb_release -c | awk '{print $2}')
@@ -136,6 +166,7 @@ fi
 # ============================================================
 #                     PACKAGE INSTALLATION
 # ============================================================
+
 echo -e "\n${BLUE}→ Installing System Packages...${RESET}"
 
 if [[ "$CODENAME" == "trixie" ]]; then
@@ -205,6 +236,7 @@ echo -e "${BLUE}✔ PATH In ~/.zshrc Is Updated${RESET}"
 # ============================================================
 #                     REMOVE FILE-ROLLER
 # ============================================================
+
 echo -e "\n${BLUE}→ Removing file-roller...${RESET}"
 remove_package file-roller
 
@@ -219,8 +251,8 @@ fi
 # ============================================================
 #                     USER PERMISSIONS
 # ============================================================
+
 echo -e "\n${BLUE}→ Adding User Permissions...${RESET}"
-echo -ne "${BLUE}${LOADING[0]}  Adding User To Groups...\r"
 if sudo usermod -aG plugdev,disk "$USER" > /dev/null 2>&1; then
     echo -e "${BLUE}✔ User Added To plugdev,disk groups${RESET}"
 else
@@ -231,6 +263,7 @@ fi
 # ============================================================
 #                     CREATE ~/.nanorc
 # ============================================================
+
 echo -e "\n${BLUE}→ Creating ~/.nanorc...${RESET}"
 cat << 'EOF' > ~/.nanorc
 set linenumbers
@@ -242,6 +275,7 @@ echo -e "${BLUE}✔ ~/.nanorc Created${RESET}"
 # ============================================================
 #            ORIGINAL REPO-DOWNLOAD + CONFIG MERGE
 # ============================================================
+
 echo -e "\n${BLUE}→ Downloading Configuration Files...${RESET}"
 
 if [ ! -f "$REQUIREMENTS_FILE" ]; then
@@ -263,7 +297,7 @@ while IFS= read -r package || [[ -n "$package" ]]; do
     else
         git clone "$REPO_URL" "$TARGET_DIR" > /dev/null 2>&1 &
         while kill -0 $! 2>/dev/null; do loading "Downloading $package"; done
-        echo -e "${GREEN}✔${RESET} $package downloaded                    "
+        echo -e "${GREEN}✔${RESET} $package Downloaded                    "
     fi
 
 done < "$REQUIREMENTS_FILE"
@@ -305,6 +339,7 @@ done
 # ============================================================
 #                     INSTALL GTK THEMES
 # ============================================================
+
 echo -e "\n${BLUE}→ Installing GTK Themes...${RESET}"
 
 if [ -d "$GTK_THEMES" ]; then
@@ -313,7 +348,6 @@ if [ -d "$GTK_THEMES" ]; then
     for theme in "$GTK_THEMES"/*; do
         if [ -d "$theme" ]; then
             theme_name=$(basename "$theme")
-            echo -ne "${BLUE}${LOADING[0]}  Installing $theme_name...\r"
             rm -rf "$GTK_THEMES_DEST/$theme_name"
             cp -r "$theme" "$GTK_THEMES_DEST"
             echo -e "${BLUE}✔ $theme_name Installed${RESET}"
@@ -327,6 +361,7 @@ fi
 # ============================================================
 #                     SYSTEM THEMING
 # ============================================================
+
 echo -e "\n${BLUE}→ Applying System Settings...${RESET}"
 
 echo -ne "${LOADING[0]}  Applying Dark Mode...\r"
@@ -347,6 +382,7 @@ fi
 # ============================================================
 #                     CLEANUP PROMPT
 # ============================================================
+
 echo -e "\n${YELLOW}Clean Up Downloaded Files? (Y/n): ${RESET}"
 read -r answer
 answer=${answer:-y}
