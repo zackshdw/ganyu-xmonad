@@ -6,6 +6,7 @@ clear
 BLUE="\e[34m"
 YELLOW="\033[0;33m"
 RED="\033[0;31m"
+GREEN="\033[0;32m"
 RESET="\033[0m"
 
 REQUIREMENTS_FILE="requirements.txt"
@@ -15,55 +16,58 @@ CONFIG_DIR="$(pwd)/config"
 CONFIG_DEST_DIR="$HOME/.config"
 HOME_DIR="$HOME"
 
-# Spinner symbols
 LOADING=("/" "|" "\\" "-")
+LOADING_INDEX=0
 LOADING_MAX=4
-SLEEP_INTERVAL=0.1
+SLEEP_INTERVAL=0.1 
 
-# ============================================================
-#                   Spinner for Git clone
-# ============================================================
 loading() {
-    local message="$1"
-    local index="$2"
-    echo -ne "${LOADING[index]}  Downloading... $message \r"
-    sleep $SLEEP_INTERVAL
+    echo -ne "${LOADING[$LOADING_INDEX]}  $1 \r"
+    ((LOADING_INDEX=(LOADING_INDEX+1)%LOADING_MAX))
+    sleep $SLEEP_INTERVAL  
 }
 
-# ============================================================
-#                   Silent APT Wrapper
-# ============================================================
-silent() {
-    local MSG="$1"
-    local CMD="$2"
+install_package() {
+    local package=$1
+    echo -ne "${BLUE}${LOADING[0]}  Installing $package...\r"
+    
+    if sudo apt install -y "$package" > /dev/null 2>&1; then
+        echo -e "${BLUE}✔ $package Installed${RESET}"
+        return 0
+    else
+        echo -e "${RED}✘ $package Failed To Install${RESET}"
+        return 1
+    fi
+}
 
-    echo -ne "${BLUE}→ $MSG...${RESET} "
-
-    bash -c "$CMD" > /dev/null 2>&1 &
-    local PID=$!
-
-    local i=0
-    while kill -0 $PID 2>/dev/null; do
-        echo -ne "${LOADING[i]}  \r"
-        i=$(( (i+1) % LOADING_MAX ))
-        sleep $SLEEP_INTERVAL
+install_packages() {
+    for package in "$@"; do
+        install_package "$package"
     done
-
-    wait $PID
-    echo -e "${BLUE}✔ Done${RESET}"
 }
 
-# ============================================================
-#                   Welcome Banner
-# ============================================================
+remove_package() {
+    local package=$1
+    echo -ne "${BLUE}${LOADING[0]}  Removing $package...\r"
+    
+    if sudo apt remove -y "$package" > /dev/null 2>&1; then
+        echo -e "${BLUE}✔ $package Removed${RESET}"
+        return 0
+    else
+        echo -e "${RED}✘ $package Failed To Remove${RESET}"
+        return 1
+    fi
+}
+
 echo -e "${BLUE}=============================================="
 echo -e "${BLUE}         Ganyu Xmonad  Debian Installer"
 echo -e "${BLUE}==============================================${RESET}"
 
+
 # ============================================================
-#                   PATH Configuration
+#                     PATH CONFIGURATION
 # ============================================================
-echo -e "${BLUE}→ Updating PATH in ~/.bashrc...${RESET}"
+
 if ! grep -q 'export PATH="$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin/:/sbin:/home/'"$USER"'/.local/bin"' ~/.bashrc; then
 cat << 'EOF' >> ~/.bashrc
 
@@ -71,12 +75,16 @@ cat << 'EOF' >> ~/.bashrc
 export PATH="$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin/:/sbin:/home/$USER/.local/bin"
 EOF
 fi
+
 source ~/.bashrc
 
+echo -e "${BLUE}✔ PATH In ~/.bashrc Is Updated${RESET}"
+
+
 # ============================================================
-#                   QT Profile Config
+#                     QT PROFILE CONFIG
 # ============================================================
-echo -e "${BLUE}→ Adding QT Environment Variables To ~/.profile...${RESET}"
+
 if ! grep -q "QT_QPA_PLATFORMTHEME=qt5ct" ~/.profile; then
 cat << 'EOF' >> ~/.profile
 
@@ -86,8 +94,11 @@ export QT_STYLE_OVERRIDE=Kvantum
 EOF
 fi
 
+echo -e "${BLUE}✔ QT Environment Variables In ~/.profile Is Added${RESET}"
+
+
 # ============================================================
-#                   APT Repositories
+#                     APT REPOSITORIES
 # ============================================================
 echo -e "${BLUE}→ Configuring APT Repositories...${RESET}"
 
@@ -96,7 +107,7 @@ CODENAME=$(lsb_release -c | awk '{print $2}')
 if [[ "$CODENAME" == "bookworm" || "$CODENAME" == "trixie" ]]; then
     echo -e "${BLUE}→ Setting Repositories For $CODENAME...${RESET}"
 
-sudo tee /etc/apt/sources.list > /dev/null << EOF
+sudo tee /etc/apt/sources.list << EOF > /dev/null
 deb http://deb.debian.org/debian $CODENAME contrib main non-free non-free-firmware
 deb http://deb.debian.org/debian $CODENAME-updates contrib main non-free non-free-firmware
 deb http://deb.debian.org/debian $CODENAME-proposed-updates contrib main non-free non-free-firmware
@@ -110,16 +121,22 @@ deb-src http://deb.debian.org/debian $CODENAME-backports contrib main non-free n
 deb-src http://deb.debian.org/debian-security $CODENAME-security contrib main non-free non-free-firmware
 EOF
 
-silent "Updating APT" "sudo DEBIAN_FRONTEND=noninteractive apt update"
-
+echo -ne "${BLUE}${LOADING[0]}  Updating Package Lists...\r"
+if sudo apt update > /dev/null 2>&1; then
+    echo -e "${BLUE}✔ Package Lists Updated${RESET}"
+else
+    echo -e "${RED}✘ Failed To Update Package Lists${RESET}"
+fi
 else
     echo -e "${RED}Unsupported Debian Release: $CODENAME${RESET}"
+    exit 1
 fi
 
+
 # ============================================================
-#                   Package Installation
+#                     PACKAGE INSTALLATION
 # ============================================================
-echo -e "${BLUE}→ Installing System Packages...${RESET}"
+echo -e "\n${BLUE}→ Installing System Packages...${RESET}"
 
 if [[ "$CODENAME" == "trixie" ]]; then
     EXTRA_TOOLS="fastfetch qt-style-kvantum"
@@ -129,55 +146,104 @@ else
     EXTRA_TOOLS=""
 fi
 
-silent "Installing System Packages" "sudo DEBIAN_FRONTEND=noninteractive apt install -y \
-build-essential cmake linux-headers-$(uname -r) python3 python3-pip \
-net-tools network-manager ffmpeg ffmpegthumbnailer tumbler libglib2.0-bin \
-webp-pixbuf-loader htop pulseaudio pulsemixer curl jq wget git gnupg2"
+install_packages \
+    build-essential cmake "linux-headers-$(uname -r)" python3 python3-pip \
+    net-tools network-manager ffmpeg ffmpegthumbnailer tumbler libglib2.0-bin \
+    webp-pixbuf-loader htop pulseaudio pulsemixer curl jq wget git gnupg2
 
-silent "Installing Archive Tools" "sudo DEBIAN_FRONTEND=noninteractive apt install -y tar p7zip zip unzip rar unrar xarchiver"
+echo -e "\n${BLUE}→ Installing Archive Tools...${RESET}"
+install_packages tar p7zip zip unzip rar unrar xarchiver
 
-silent "Installing XMonad Environment" "sudo DEBIAN_FRONTEND=noninteractive apt install -y xmonad xmobar kitty"
+echo -e "\n${BLUE}→ Installing XMonad Environment...${RESET}"
+install_packages xmonad xmobar kitty
 
-silent "Installing Mount Tools" "sudo DEBIAN_FRONTEND=noninteractive apt install -y \
-xdg-utils ntfs-3g nfs-common cifs-utils lxpolkit pmount udisks2 gvfs gvfs-backends gparted"
+echo -e "\n${BLUE}→ Installing Mount Tools...${RESET}"
+install_packages \
+    xdg-utils ntfs-3g nfs-common cifs-utils lxpolkit pmount udisks2 gvfs gvfs-backends
 
-silent "Installing Themes" "sudo DEBIAN_FRONTEND=noninteractive apt install -y \
-breeze-icon-theme papirus-icon-theme"
+echo -e "\n${BLUE}→ Installing Themes...${RESET}"
+install_packages breeze-icon-theme papirus-icon-theme
 
-silent "Installing Utilities" "sudo DEBIAN_FRONTEND=noninteractive apt install -y \
-xrdp yad gnome-software scrot feh lxappearance qt5ct qt6ct \
-mpd mpc ncmpcpp cava simplescreenrecorder vlc \
-compton rofi mousepad nemo remmina firefox-esr $EXTRA_TOOLS"
+echo -e "\n${BLUE}→ Installing Utilities...${RESET}"
+install_packages \
+    xrdp yad gnome-software scrot feh lxappearance qt5ct qt6ct \
+    mpd mpc ncmpcpp cava simplescreenrecorder vlc \
+    compton rofi mousepad nemo remmina firefox-esr
 
-silent "Installing ZSH" "sudo DEBIAN_FRONTEND=noninteractive apt install -y zsh"
+if [ -n "$EXTRA_TOOLS" ]; then
+    install_packages $EXTRA_TOOLS
+fi
 
-sudo chsh -s $(which zsh)
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+echo -e "\n${BLUE}→ Installing ZSH & OH-MY-ZSH...${RESET}"
+install_package zsh
+
+echo -ne "${BLUE}${LOADING[0]}  Configuring ZSH As Default Shell...\r"
+if sudo chsh -s $(which zsh) > /dev/null 2>&1; then
+    echo -e "${BLUE}✔ ZSH Set As Default Shell${RESET}"
+else
+    echo -e "${RED}✘ Failed To Set ZSH As Default Shell${RESET}"
+fi
+
+echo -ne "${BLUE}${LOADING[0]}  Installing OH-MY-ZSH...\r"
+if sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended > /dev/null 2>&1; then
+    echo -e "${BLUE}✔ OH-MY-ZSH Installed${RESET}"
+else
+    echo -e "${RED}✘ Failed To Install OH-MY-ZSH${RESET}"
+fi
+
+if ! grep -q 'export PATH="$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin/:/sbin:/home/'"$USER"'/.local/bin"' ~/.zshrc; then
+cat << 'EOF' >> ~/.zshrc
+
+# Add PATH
+export PATH="$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin/:/sbin:/home/$USER/.local/bin"
+EOF
+fi
+
+echo -e "${BLUE}✔ PATH In ~/.zshrc Is Updated${RESET}"
+
 
 # ============================================================
-#                   Remove file-roller
+#                     REMOVE FILE-ROLLER
 # ============================================================
-silent "Removing file-roller" "sudo DEBIAN_FRONTEND=noninteractive apt remove -y file-roller"
-silent "Auto-removing Unnecessary Packages" "sudo DEBIAN_FRONTEND=noninteractive apt autoremove -y"
+echo -e "\n${BLUE}→ Removing file-roller...${RESET}"
+remove_package file-roller
+
+echo -ne "${BLUE}${LOADING[0]}  Running Autoremove...\r"
+if sudo apt autoremove -y > /dev/null 2>&1; then
+    echo -e "${BLUE}✔ Autoremove Complete${RESET}"
+else
+    echo -e "${RED}✘ Autoremove Failed${RESET}"
+fi
+
 
 # ============================================================
-#                   User Permissions
+#                     USER PERMISSIONS
 # ============================================================
-echo -e "${BLUE}→ Adding User Permissions...${RESET}"
-sudo usermod -aG plugdev,disk "$USER"
+echo -e "\n${BLUE}→ Adding User Permissions...${RESET}"
+echo -ne "${BLUE}${LOADING[0]}  Adding User To Groups...\r"
+if sudo usermod -aG plugdev,disk "$USER" > /dev/null 2>&1; then
+    echo -e "${BLUE}✔ User Added To plugdev,disk groups${RESET}"
+else
+    echo -e "${RED}✘ Failed To Add User To Groups${RESET}"
+fi
+
 
 # ============================================================
-#                   Create ~/.nanorc
+#                     CREATE ~/.nanorc
 # ============================================================
-echo -e "${BLUE}→ Creating ~/.nanorc...${RESET}"
+echo -e "\n${BLUE}→ Creating ~/.nanorc...${RESET}"
 cat << 'EOF' > ~/.nanorc
 set linenumbers
 set softwrap
 EOF
+echo -e "${BLUE}✔ ~/.nanorc Created${RESET}"
+
 
 # ============================================================
-#                   GitHub Repo Downloads
+#            ORIGINAL REPO-DOWNLOAD + CONFIG MERGE
 # ============================================================
+echo -e "\n${BLUE}→ Downloading Configuration Files...${RESET}"
+
 if [ ! -f "$REQUIREMENTS_FILE" ]; then
     echo -e "${RED}Error: $REQUIREMENTS_FILE Not Found!${RESET}"
     exit 1
@@ -196,15 +262,10 @@ while IFS= read -r package || [[ -n "$package" ]]; do
         echo -e "${YELLOW}$package Already Downloaded, Skipping...${RESET}"
     else
         git clone "$REPO_URL" "$TARGET_DIR" > /dev/null 2>&1 &
-        PID=$!
-        LOADER_INDEX=0
-        while kill -0 $PID 2>/dev/null; do
-            echo -ne "${LOADING[LOADER_INDEX]}  Downloading... $package \r"
-            LOADER_INDEX=$(( (LOADER_INDEX+1)%LOADING_MAX ))
-            sleep 0.1
-        done
-        echo -e "${BLUE}✔ $package Downloaded.${RESET}"
+        while kill -0 $! 2>/dev/null; do loading "Downloading $package"; done
+        echo -e "${GREEN}✔${RESET} $package downloaded                    "
     fi
+
 done < "$REQUIREMENTS_FILE"
 
 mkdir -p "$CONFIG_DEST_DIR"
@@ -226,6 +287,7 @@ cleanup() {
     done
 }
 
+echo -e "\n${BLUE}→ Processing Configuration Files...${RESET}"
 for package in "$CONFIG_DIR"/*; do
     package_name=$(basename "$package")
 
@@ -235,50 +297,70 @@ for package in "$CONFIG_DIR"/*; do
         zsh-themes) process "$HOME_DIR/.oh-my-zsh/themes" "$package" ;;
         *) process "$CONFIG_DEST_DIR/$package_name" "$package" ;;
     esac
+    
+    echo -e "${BLUE}✔ $package_name Configured${RESET}"
 done
 
+
 # ============================================================
-#                   GTK Themes
+#                     INSTALL GTK THEMES
 # ============================================================
+echo -e "\n${BLUE}→ Installing GTK Themes...${RESET}"
+
 if [ -d "$GTK_THEMES" ]; then
     mkdir -p "$GTK_THEMES_DEST"
+
     for theme in "$GTK_THEMES"/*; do
         if [ -d "$theme" ]; then
             theme_name=$(basename "$theme")
-            echo -e "${BLUE}→ Installing $theme_name GTK Themes...${RESET}"
+            echo -ne "${BLUE}${LOADING[0]}  Installing $theme_name...\r"
             rm -rf "$GTK_THEMES_DEST/$theme_name"
             cp -r "$theme" "$GTK_THEMES_DEST"
+            echo -e "${BLUE}✔ $theme_name Installed${RESET}"
         fi
     done
-    echo -e "${BLUE}✔ GTK Themes Installed${RESET}"
+else
+    echo -e "${YELLOW}No GTK Themes Directory Found, Skipping...${RESET}"
 fi
 
-# ============================================================
-#                   System Theming
-# ============================================================
-echo -e "${BLUE}→ Applying Dark Mode...${RESET}"
-gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || true
-
-echo -e "${BLUE}→ Setting Default Terminal To Kitty...${RESET}"
-gsettings set org.cinnamon.desktop.default-applications.terminal exec kitty || true
 
 # ============================================================
-#                   Cleanup Prompt
+#                     SYSTEM THEMING
 # ============================================================
-echo -ne "${YELLOW}Clean Up Downloaded Files? (Y/n): ${RESET}"
+echo -e "\n${BLUE}→ Applying System Settings...${RESET}"
+
+echo -ne "${LOADING[0]}  Applying Dark Mode...\r"
+if gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null; then
+    echo -e "${BLUE}✔ Dark Mode Applied${RESET}"
+else
+    echo -e "${YELLOW}⚠ Could Not Apply Dark Mode${RESET}"
+fi
+
+echo -ne "${BLUE}${LOADING[0]}  Setting Default Terminal...\r"
+if gsettings set org.cinnamon.desktop.default-applications.terminal exec kitty 2>/dev/null; then
+    echo -e "${BLUE}✔ Default Terminal Set To Kitty${RESET}"
+else
+    echo -e "${YELLOW}⚠ Could Not Set Default Terminal${RESET}"
+fi
+
+
+# ============================================================
+#                     CLEANUP PROMPT
+# ============================================================
+echo -e "\n${YELLOW}Clean Up Downloaded Files? (Y/n): ${RESET}"
 read -r answer
 answer=${answer:-y}
 
 case "$answer" in
     y|Y|yes|YES)
         cleanup
-        echo -e "${BLUE}✔ Cleanup Complete.${RESET}"
+        echo -e "${BLUE}✔ Cleanup Complete${RESET}"
     ;;
     *)
         echo -e "${YELLOW}Skipping Cleanup. Temporary Files Kept.${RESET}"
     ;;
 esac
 
-echo -e "${BLUE}=============================================="
+echo -e "\n${BLUE}=============================================="
 echo -e "${BLUE}            Installation Complete!${RESET}"
 echo -e "${BLUE}==============================================${RESET}"
