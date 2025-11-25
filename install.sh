@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+clear
+
 BLUE="\e[34m"
 YELLOW="\033[0;33m"
 RED="\033[0;31m"
@@ -9,7 +11,7 @@ RESET="\033[0m"
 REQUIREMENTS_FILE="requirements.txt"
 GTK_THEMES="$(pwd)/themes/gtk"
 GTK_THEMES_DEST="$HOME/.themes"
-CONFIG_DIR="$(pwd)/temp"
+CONFIG_DIR="$(pwd)/config"
 CONFIG_DEST_DIR="$HOME/.config"
 HOME_DIR="$HOME"
 
