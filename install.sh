@@ -133,7 +133,7 @@ SYSTEM_PACKAGES=(
     build-essential cmake linux-headers-$(uname -r) python3 python3-pip
     net-tools network-manager ffmpeg ffmpegthumbnailer tumbler libglib2.0-bin
     webp-pixbuf-loader htop pulseaudio pulsemixer curl jq wget git gnupg2
-    xserver-xorg xserver-xorg-input-libinput 
+    xserver-xorg xserver-xorg-input-libinput ranger
 )
 
 ARCHIVE_TOOLS=(tar p7zip zip unzip rar unrar xarchiver)
@@ -180,11 +180,20 @@ else
     echo -e "${YELLOW}→ OH-MY-ZSH Already Installed, Skipping...${RESET}"
 fi
 
-if ! grep -q 'export PATH=' ~/.zshrc; then
-cat << EOF >> ~/.zshrc
+ZSHRC="$HOME/.zshrc"
+NEW_PATH="$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/$USER/.local/bin"
+NEW_THEME="ganyu"
+
+sed -i "s/^ZSH_THEME=.*/ZSH_THEME=\"$NEW_THEME\"/" "$ZSHRC"
+
+if grep -q '^# export PATH=' "$ZSHRC"; then
+    sed -i "s|^# export PATH=.*|export PATH=\"$NEW_PATH\"|" "$ZSHRC"
+
+elif ! grep -q '^export PATH=' "$ZSHRC"; then
+    cat << EOF >> "$ZSHRC"
 
 # Add PATH
-export PATH="\$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin/:/sbin:/home/$USER/.local/bin"
+export PATH="$NEW_PATH"
 EOF
 fi
 
