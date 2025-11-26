@@ -13,7 +13,7 @@ Pictures
 qt5ct
 ranger
 rofi
-sh_icao_weather_code
+weather
 xmobar
 xmonad
 zsh-themes
