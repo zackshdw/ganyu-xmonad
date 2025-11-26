@@ -111,7 +111,9 @@ deb-src http://deb.debian.org/debian-security $CODENAME-security contrib main no
 EOF
 
 export SUDO_PROMPT=$'\e[1;34m→ Enter your password: \e[0m'
-sudo -k apt update > /dev/null 2>&1 &
+sudo -p "$SUDO_PROMPT" true || exit 1
+
+sudo apt update > /dev/null 2>&1 &
 spinner $! "Updating APT"
 
 else
