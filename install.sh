@@ -171,7 +171,7 @@ remove_pkg "file-roller"
 # ============================================================
 echo -e "${BLUE}→ Installing ZSH & OH-MY-ZSH...${RESET}"
 install_pkg "zsh"
-sudo chsh -s "$(which zsh)"
+chsh -s "$(which zsh)"
 
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
     echo -e "${BLUE}→ Installing OH-MY-ZSH...${RESET}"
