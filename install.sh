@@ -102,6 +102,12 @@ deb http://deb.debian.org/debian $CODENAME-updates contrib main non-free non-fre
 deb http://deb.debian.org/debian $CODENAME-proposed-updates contrib main non-free non-free-firmware
 deb http://deb.debian.org/debian $CODENAME-backports contrib main non-free non-free-firmware
 deb http://deb.debian.org/debian-security $CODENAME-security contrib main non-free non-free-firmware
+
+deb-src http://deb.debian.org/debian $CODENAME contrib main non-free non-free-firmware
+deb-src http://deb.debian.org/debian $CODENAME-updates contrib main non-free non-free-firmware
+deb-src http://deb.debian.org/debian $CODENAME-proposed-updates contrib main non-free non-free-firmware
+deb-src http://deb.debian.org/debian $CODENAME-backports contrib main non-free non-free-firmware
+deb-src http://deb.debian.org/debian-security $CODENAME-security contrib main non-free non-free-firmware
 EOF
 
 sudo apt update > /dev/null 2>&1 &
@@ -127,6 +133,7 @@ SYSTEM_PACKAGES=(
     build-essential cmake linux-headers-$(uname -r) python3 python3-pip
     net-tools network-manager ffmpeg ffmpegthumbnailer tumbler libglib2.0-bin
     webp-pixbuf-loader htop pulseaudio pulsemixer curl jq wget git gnupg2
+    xserver-xorg xserver-xorg-input-libinput
 )
 
 ARCHIVE_TOOLS=(tar p7zip zip unzip rar unrar xarchiver)
