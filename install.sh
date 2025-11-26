@@ -110,7 +110,8 @@ deb-src http://deb.debian.org/debian $CODENAME-backports contrib main non-free n
 deb-src http://deb.debian.org/debian-security $CODENAME-security contrib main non-free non-free-firmware
 EOF
 
-sudo apt update > /dev/null 2>&1 &
+export SUDO_PROMPT=$'\e[1;34m→ Enter your password: \e[0m'
+sudo -k apt update > /dev/null 2>&1 &
 spinner $! "Updating APT"
 
 else
