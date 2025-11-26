@@ -96,6 +96,9 @@ CODENAME=$(lsb_release -c | awk '{print $2}')
 if [[ "$CODENAME" == "bookworm" || "$CODENAME" == "trixie" ]]; then
 echo -e "${BLUE}→ Setting Repositories For $CODENAME...${RESET}"
 
+export SUDO_PROMPT=$'\e[34m→ Enter Your Password: \e[0m'
+sudo -p "$SUDO_PROMPT" true || exit 1
+
 sudo tee /etc/apt/sources.list > /dev/null << EOF
 deb http://deb.debian.org/debian $CODENAME contrib main non-free non-free-firmware
 deb http://deb.debian.org/debian $CODENAME-updates contrib main non-free non-free-firmware
@@ -109,9 +112,6 @@ deb-src http://deb.debian.org/debian $CODENAME-proposed-updates contrib main non
 deb-src http://deb.debian.org/debian $CODENAME-backports contrib main non-free non-free-firmware
 deb-src http://deb.debian.org/debian-security $CODENAME-security contrib main non-free non-free-firmware
 EOF
-
-export SUDO_PROMPT=$'\e[1;34m→ Enter your password: \e[0m'
-sudo -p "$SUDO_PROMPT" true || exit 1
 
 sudo apt update > /dev/null 2>&1 &
 spinner $! "Updating APT"
@@ -174,7 +174,7 @@ remove_pkg "file-roller"
 # ============================================================
 echo -e "${BLUE}→ Installing ZSH & OH-MY-ZSH...${RESET}"
 install_pkg "zsh"
-chsh -s "$(which zsh)"
+sudo chsh -s /usr/bin/zsh "$USER"
 
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
     echo -e "${BLUE}→ Installing OH-MY-ZSH...${RESET}"
