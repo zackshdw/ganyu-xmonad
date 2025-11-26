@@ -1,11 +1,11 @@
 #!/bin/bash
 
+# set -e
+
 if [ "$EUID" -eq 0 ]; then
-    echo -e "${RED}Do NOT run this script as root or with sudo!${RESET}"
+    echo -e "${RED}Do NOT Run This Script As root Or sudo!${RESET}"
     exit 1
 fi
-
-set -e
 
 clear
 
@@ -22,7 +22,7 @@ CONFIG_DEST_DIR="$HOME/.config"
 HOME_DIR="$HOME"
 
 # ============================================================
-#                     SPINNER (FIXED)
+#                     SPINNER
 # ============================================================
 spinner() {
     local pid="$1"
@@ -40,7 +40,7 @@ spinner() {
 }
 
 # ============================================================
-#                     PACKAGE INSTALL (FIXED)
+#                     PACKAGE INSTALL
 # ============================================================
 install_pkg() {
     local pkg="$1"
@@ -133,7 +133,7 @@ SYSTEM_PACKAGES=(
     build-essential cmake linux-headers-$(uname -r) python3 python3-pip
     net-tools network-manager ffmpeg ffmpegthumbnailer tumbler libglib2.0-bin
     webp-pixbuf-loader htop pulseaudio pulsemixer curl jq wget git gnupg2
-    xserver-xorg xserver-xorg-input-libinput
+    xserver-xorg xserver-xorg-input-libinput 
 )
 
 ARCHIVE_TOOLS=(tar p7zip zip unzip rar unrar xarchiver)
@@ -177,7 +177,7 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
     echo -e "${BLUE}→ Installing OH-MY-ZSH...${RESET}"
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended > /tmp/oh-my-zsh-install.log 2>&1
 else
-    echo -e "${YELLOW}→ OH-MY-ZSH already installed, skipping...${RESET}"
+    echo -e "${YELLOW}→ OH-MY-ZSH Already Installed, Skipping...${RESET}"
 fi
 
 if ! grep -q 'export PATH=' ~/.zshrc; then
@@ -185,6 +185,40 @@ cat << EOF >> ~/.zshrc
 
 # Add PATH
 export PATH="\$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin/:/sbin:/home/$USER/.local/bin"
+EOF
+fi
+
+# ============================================================
+#                        INSTALL LSD
+# ============================================================
+echo -e "${BLUE}→ Installing LSD (ls Replacement)...${RESET}"
+
+if ! command -v lsd >/dev/null 2>&1; then
+    curl -sS https://webi.sh/lsd | sh > /tmp/lsd-install.log 2>&1 &
+    spinner $! "Installing lsd..."
+
+    if [ -f "$HOME/.config/envman/PATH.env" ]; then
+        source "$HOME/.config/envman/PATH.env"
+    fi
+else
+    echo -e "${YELLOW}✔ lsd Already Installed, Skipping...${RESET}"
+fi
+
+if ! grep -q "alias ls=lsd" ~/.zshrc; then
+cat << 'EOF' >> ~/.zshrc
+
+# LSD Aliases
+alias ls='lsd'
+alias tree='lsd --tree'
+EOF
+fi
+
+if ! grep -q "alias ls=lsd" ~/.bashrc; then
+cat << 'EOF' >> ~/.bashrc
+
+# LSD Aliases
+alias ls='lsd'
+alias tree='lsd --tree'
 EOF
 fi
 
@@ -288,11 +322,11 @@ answer=${answer:-y}
 
 if [[ "$answer" =~ ^[Yy]$ ]]; then
     cleanup
-    echo -e "${BLUE}✔ Cleanup Complete.${RESET}"
+    echo -e "${BLUE}✔ Cleanup Complete${RESET}"
 else
-    echo -e "${YELLOW}Skipping Cleanup.${RESET}"
+    echo -e "${YELLOW}✔ Skipping Cleanup${RESET}"
 fi
 
 echo -e "${BLUE}=============================================="
-echo -e "${BLUE}            Installation Complete!${RESET}"
+echo -e "${BLUE} Installation Complete!  Type startx To Start${RESET}"
 echo -e "${BLUE}==============================================${RESET}"
