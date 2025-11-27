@@ -135,15 +135,17 @@ fi
 SYSTEM_PACKAGES=(
     build-essential cmake linux-headers-$(uname -r) python3 python3-pip
     net-tools network-manager ffmpeg ffmpegthumbnailer tumbler libglib2.0-bin
-    webp-pixbuf-loader htop pulseaudio pulsemixer curl jq wget git gnupg2
-    xserver-xorg xserver-xorg-input-libinput ranger
+    webp-pixbuf-loader htop pulseaudio pulsemixer curl jq wget git gnupg2 printer-driver-all
+    xserver-xorg xserver-xorg-input-libinput ranger avahi-daemon samba samba-common gvfs gvfs-backends winbind
 )
 
 ARCHIVE_TOOLS=(tar p7zip zip unzip rar unrar xarchiver)
 XMONAD_ENV=(xmonad xmobar kitty)
 MOUNT_TOOLS=(xdg-utils ntfs-3g nfs-common cifs-utils lxpolkit pmount udisks2 gvfs gvfs-backends gparted)
 THEMES=(breeze-icon-theme papirus-icon-theme)
-UTILITIES=(xrdp yad gthumb scrot feh lxappearance qt5ct qt6ct mpd mpc ncmpcpp cava simplescreenrecorder vlc compton rofi mousepad nemo remmina firefox-esr "${EXTRA_TOOLS[@]}")
+UTILITIES=(xrdp yad gthumb scrot feh lxappearance qt5ct qt6ct mpd mpc ncmpcpp cava simplescreenrecorder 
+    vlc compton rofi mousepad nemo remmina firefox-esr "${EXTRA_TOOLS[@]}"
+)
 
 echo -e "${BLUE}→ Installing System Packages...${RESET}"
 for pkg in "${SYSTEM_PACKAGES[@]}"; do install_pkg "$pkg"; done
@@ -238,7 +240,7 @@ fi
 #                     USER PERMISSIONS
 # ============================================================
 echo -e "${BLUE}→ Adding User Permissions...${RESET}"
-sudo usermod -aG plugdev,disk "$USER"
+sudo usermod -aG plugdev,disk,lpadmin "$USER"
 
 # ============================================================
 #                     CREATE ~/.nanorc
