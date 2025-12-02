@@ -10,9 +10,11 @@ mpd
 ncmpcpp
 nemo
 Pictures
+powermenu
 qt5ct
 ranger
 rofi
+urxvt
 weather
 xmobar
 xmonad

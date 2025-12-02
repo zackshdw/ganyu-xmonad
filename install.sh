@@ -133,15 +133,15 @@ else
 fi
 
 SYSTEM_PACKAGES=(
-    build-essential cmake linux-headers-$(uname -r) python3 python3-pip
-    net-tools network-manager ffmpeg ffmpegthumbnailer tumbler libglib2.0-bin
+    build-essential cmake linux-headers-$(uname -r) python3 python3-pip xsel
+    net-tools network-manager ffmpeg ffmpegthumbnailer tumbler libglib2.0-bin rxvt-unicode
     webp-pixbuf-loader htop pulseaudio pulsemixer curl jq wget git gnupg2 printer-driver-all
     xserver-xorg xserver-xorg-input-libinput ranger avahi-daemon samba samba-common gvfs gvfs-backends winbind
 )
 
 ARCHIVE_TOOLS=(tar p7zip zip unzip rar unrar xarchiver)
 XMONAD_ENV=(xmonad xmobar kitty)
-MOUNT_TOOLS=(xdg-utils ntfs-3g nfs-common cifs-utils lxpolkit pmount udisks2 gvfs gvfs-backends gparted)
+MOUNT_TOOLS=(xdg-utils ntfs-3g nfs-common cifs-utils lxpolkit pmount udisks2 gparted)
 THEMES=(breeze-icon-theme papirus-icon-theme)
 UTILITIES=(xrdp yad gthumb scrot feh lxappearance qt5ct qt6ct mpd mpc ncmpcpp cava simplescreenrecorder 
     vlc compton rofi mousepad nemo remmina firefox-esr "${EXTRA_TOOLS[@]}"
@@ -306,6 +306,7 @@ for package in "$CONFIG_DIR"/*; do
     case "$name" in
         fonts)       process "$HOME_DIR/.fonts" "$package" ;;
         Pictures)    process "$HOME_DIR/Pictures" "$package" ;;
+        urxvt)       process "$HOME_DIR/.urxvt" "$package" ;;
         zsh-themes)  process "$HOME_DIR/.oh-my-zsh/themes" "$package" ;;
         *)           process "$CONFIG_DEST_DIR/$name" "$package" ;;
     esac
