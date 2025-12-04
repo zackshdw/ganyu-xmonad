@@ -133,10 +133,11 @@ else
 fi
 
 SYSTEM_PACKAGES=(
-    build-essential cmake linux-headers-$(uname -r) python3 python3-pip xsel
+    build-essential cmake linux-headers-$(uname -r) python3 python3-pip xsel winbind
     net-tools network-manager ffmpeg ffmpegthumbnailer tumbler libglib2.0-bin rxvt-unicode
     webp-pixbuf-loader htop pulseaudio pulsemixer curl jq wget git gnupg2 printer-driver-all
-    xserver-xorg xserver-xorg-input-libinput ranger avahi-daemon samba samba-common gvfs gvfs-backends winbind
+    smbclient system-config-printer xserver-xorg xserver-xorg-input-libinput ranger avahi-daemon 
+    avahi-utils amba samba-common gvfs gvfs-backends
 )
 
 ARCHIVE_TOOLS=(tar p7zip zip unzip rar unrar xarchiver)
